@@ -11,7 +11,8 @@ You will need to enable the SELinux namespaces support option under Security opt
 Reviewing the patches on the branch is a good way to learn a lot about SELinux and the current state of SELinux namespaces, starting with just reading the patch descriptions and any TODO comments sprinkled in the code.
 
 Once you have booted this kernel, you can unshare the SELinux namespace and load a policy into it as follows:
-
+<details><summary>Expand commands</summary>
+    
     # Create root shell
     sudo bash
     id -Z # See your context in the current SELinux namespace
@@ -49,6 +50,7 @@ Once you have booted this kernel, you can unshare the SELinux namespace and load
     # Exit shell that originally unshared SELinux namespace
     exit
     # Child namespace should be gone and you should be back to the parent/init namespace.
+</details>
 
 ## Resource Limits
 
@@ -56,6 +58,8 @@ Two limits are defined for SELinux namespaces, maxnsdepth (maximum depth for nes
 
 Testing of maxnsdepth was done using the following script named doit.sh:
 
+<details><summary>Expand doit.sh</summary>
+    
     #!/bin/sh -e
     echo $1
     arg="$1"
@@ -64,16 +68,22 @@ Testing of maxnsdepth was done using the following script named doit.sh:
     mount -t selinuxfs none /sys/fs/selinux
     echo 1 > /sys/fs/selinux/unshare
     unshare -m ./doit.sh $argplus
+</details>
 
 which can be called as follows:
 
+<details><summary>Expand commands</summary>
+    
     # Create root shell to unshare namespaces
     sudo bash
     # Unshare the mount namespace and invoke the recursive script; should fail upon hitting the limit
     unshare -m ./doit.sh 1
     # Expect failure when it tries to create the 33rd nested namespace
+</details>
 
 Testing of maxns was done by lowering it to a value below maxnsdepth and then running the same script.
+
+<details><summary>Expand commands</summary>
 
     # Create root shell to modify maxns and unshare namespaces
     sudo bash
@@ -83,6 +93,7 @@ Testing of maxns was done by lowering it to a value below maxnsdepth and then ru
     # Expect failure when it tries to create the 5th namespace (init namespace + 4 children = 5)
     # Restore original maxns value
     echo 65535 > /sys/fs/selinux/maxns
+</details>
 
 ## Testing
 
@@ -93,6 +104,8 @@ git clone -b selinuxns https://github.com/stephensmalley/selinux-testsuite
 Basic functional testing consists of running the SELinux testsuite in the init SELinux namespace and in a child SELinux namespace to confirm no regressions in the init namespace and correct behavior in the child namespace. Running the testsuite in the init SELinux namespace can be done as usual following the instructions in SELinux and should be checked first prior to testing child namespaces. During or after running the testsuite, check dmesg or journalctl -k output for any warnings/errors during the run (in particular look for BUG: reports and kmemleak reports).
 
 The entire SELinux testsuite can be run within a child SELinux namespace as long as the parent namespace is permissive (to avoid denying access due to the context in the parent not being allowed the same permissions as the test domains), with only the labeled IPSEC tests failing (2 tests each for inet_socket/tcp, inet_socket/udp, and inet_socket/mptcp) due to the labeled IPSEC hooks not supporting namespaces at this time. I have disabled these tests in my selinuxns branch to avoid noise from them. To run the testsuite in a child SELinux namespace with the parent namespace in permissive, do the following:
+
+<details><summary>Expand commands</summary>
 
     sudo bash
     # Switch init SELinux namespace to permissive so it doesn't interfere with testsuite operation in the child
@@ -126,8 +139,11 @@ The entire SELinux testsuite can be run within a child SELinux namespace as long
     # Check for any BUG or kmemleak reports during the test
     sudo journalctl -k | grep BUG:
     sudo journalctl -k | grep kmemleak:
+</details>
 
 It is also possible to run much of the SELinux testsuite in the child namespace with the parent in enforcing mode if you load the test policy into the init/parent namespace first so that the test domains/types are defined in both namespaces and the process context in the parent namespace is allowed the necessary permissions. To run the testsuite in the child namespace with the parent namespace enforcing, do the following (this assumes that the host OS/parent has a working policy and is already enforcing initially):
+
+<details><summary>Expand commands</summary>
 
     # Confirm that the init/parent namespace is enforcing; if not, fix.
     getenforce
@@ -165,18 +181,19 @@ It is also possible to run much of the SELinux testsuite in the child namespace 
     # Check for any BUG or kmemleak reports during the test
     sudo journalctl -k | grep BUG:
     sudo journalctl -k | grep kmemleak:
+</details>
 
 Selective testing has also confirmed that if the parent denies access, the operation fails, even if the child allows it or is permissive, although this has not been exhaustively checked for every permission check.
 
-In order to enable testing of SELinux namespaces for full containers, potentially with a different policy than the host OS, corresponding userspace changes are required for SELinux namespaces; see [Userspace]#Userspace for further discussion and prerequisites. The following table shows the current set of combinations of host OS and container OS that have been tested with separate SELinux namespaces.
+In order to enable testing of SELinux namespaces for full containers, potentially with a different policy than the host OS, corresponding userspace changes are required for SELinux namespaces; see [Userspace](#Userspace) for further discussion and prerequisites. The following table shows the current set of combinations of host OS and container OS that have been tested with separate SELinux namespaces.
 
-|Host OS| Container OS | Rocky 9 | Rocky 8 | Debian | Ubuntu |	Android |
---------|---|---|---------|--------|--------|---------|
-Fedora ||y|y|y|||
-Fedora (no policy) ||y|y|y||
-Ubuntu (no policy) ||y|y|y||
-Rocky 9 ||||	
-Rocky 8 ||||	
-Debian |||||	
+|Host OS|Rocky 9|Rocky 8|Debian|Ubuntu|Android|
+--------|------|-------|------|------|-------|
+Fedora  |y|y|y|
+Fedora (no policy) [^1] |y|y|y|
+Ubuntu [^1] |y|y|y|
+Rocky 9 |||	
+Rocky 8 |||	
+Debian  |||	
 
-Currently requires relabel from container on first boot
+[^1]: Currently requires relabel from container on first boot
