@@ -49,3 +49,37 @@ Once you have booted this kernel, you can unshare the SELinux namespace and load
     # Exit shell that originally unshared SELinux namespace
     exit
     # Child namespace should be gone and you should be back to the parent/init namespace.
+
+# Resource Limits
+
+Two limits are defined for SELinux namespaces, maxnsdepth (maximum depth for nesting namespaces, default 32) and maxns (maximum number of namespaces, default 65535). The default value for each limit can be overridden via kernel configuration, and the active value can be modified from the init SELinux namespace by writing to /sys/fs/selinux/maxnsdepth and /sys/fs/selinux/maxns respectively. In child namespaces, the values can only be read, not written, to prevent child namespaces from escaping the limits (alternatively, we could allow them to only be lowered).
+
+Testing of maxnsdepth was done using the following script named doit.sh:
+
+    #!/bin/sh -e
+    echo $1
+    arg="$1"
+    argplus=$((arg + 1))
+    umount /sys/fs/selinux
+    mount -t selinuxfs none /sys/fs/selinux
+    echo 1 > /sys/fs/selinux/unshare
+    unshare -m ./doit.sh $argplus
+
+which can be called as follows:
+
+    # Create root shell to unshare namespaces
+    sudo bash
+    # Unshare the mount namespace and invoke the recursive script; should fail upon hitting the limit
+    unshare -m ./doit.sh 1
+    # Expect failure when it tries to create the 33rd nested namespace
+
+Testing of maxns was done by lowering it to a value below maxnsdepth and then running the same script.
+
+    # Create root shell to modify maxns and unshare namespaces
+    sudo bash
+    cat /sys/fs/selinux/maxns
+    echo 5 > /sys/fs/selinux/maxns
+    unshare -m ./doit.sh 1
+    # Expect failure when it tries to create the 5th namespace (init namespace + 4 children = 5)
+    # Restore original maxns value
+    echo 65535 > /sys/fs/selinux/maxns
