@@ -194,8 +194,8 @@ Fedora  |y|y|y|
 Fedora w/o policy [^1] |y|y|y|
 Ubuntu [^2] |y|y|y|
 
-[^1]: Fedora host OS has SELinux enabled but no policy loaded. Currently requires relabel from container on first boot.
-[^2]: Ubuntu host OS has SELinux enabled but no policy loaded. Currently requires relabel from container on first boot.
+[^1]: Fedora host OS with SELinux enabled but no policy loaded. Currently requires relabel from container on first boot.
+[^2]: Ubuntu host OS with SELinux enabled but no policy loaded. Currently requires relabel from container on first boot.
 
 ## Userspace
 
