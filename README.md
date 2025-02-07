@@ -191,13 +191,11 @@ In order to enable testing of SELinux namespaces for full containers, potentiall
 |Host OS|Fedora|Rocky 9|Rocky 8|Debian|Ubuntu|Android|
 |-------|------|-------|-------|------|------|-------|
 Fedora  |y|y|y|
-Fedora (no policy) [^1] |y|y|y|
-Ubuntu (SELinux enabled, no policy) [^1] |y|y|y|
-Rocky 9 |||	
-Rocky 8 |||	
-Debian (SELinux enabled, no policy) |||	
+Fedora w/o policy [^1] |y|y|y|
+Ubuntu [^2] |y|y|y|
 
-[^1]: Currently requires relabel from container on first boot
+[^1]: Fedora host OS has SELinux enabled but no policy loaded. Currently requires relabel from container on first boot.
+[^2]: Ubuntu host OS has SELinux enabled but no policy loaded. Currently requires relabel from container on first boot.
 
 ## Userspace
 
