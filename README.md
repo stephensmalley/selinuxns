@@ -7,6 +7,8 @@ Clone and build the working-selinuxns branch of my tree containing the SELinux n
 
     git clone -b working-selinuxns https://github.com/stephensmalley/selinux-kernel
 
+See the SELinux kernel wiki [Getting Started](https://github.com/SELinuxProject/selinux-kernel/wiki/Getting-Started) guide for instructions on building, booting, and testing kernels in general.
+
 You will need to enable the SELinux namespaces support option under Security options in make menuconfig (CONFIG_SECURITY_SELINUX_NS=y).
 
 Reviewing the patches on the branch is a good way to learn a lot about SELinux and the current state of SELinux namespaces, starting with just reading the patch descriptions and any TODO comments sprinkled in the code.
