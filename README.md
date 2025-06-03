@@ -3,7 +3,7 @@
 This repository is merely for documentation and tracking issues associated with the SELinux namespaces support. The code all lives elsewhere in branches of other repositories as identified below.
 
 ## Getting Started
-Clone and build the working-selinuxns branch of my tree containing the SELinux namespace patches. NB Do not use Paul Moore's working-selinuxns branch, which has not been updated since 2020.
+Clone and build the working-selinuxns branch of my tree containing the SELinux namespace patches.
 
     git clone -b working-selinuxns https://github.com/stephensmalley/selinux-kernel
 
