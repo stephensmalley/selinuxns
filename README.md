@@ -100,7 +100,7 @@ Testing of maxns was done by lowering it to a value below maxnsdepth and then ru
 
 ## Testing
 
-I have made some changes to the SELinux testsuite policy to improve the ability to run the testsuite within a child SELinux namespace with an enforcing parent namespace, which can be found on the selinuxns branch of my fork of the selinux-testsuite.
+See the SELinux kernel wiki [Getting Started](https://github.com/SELinuxProject/selinux-kernel/wiki/Getting-Started) guide for instructions on testing kernels in general. I have made some changes to the SELinux testsuite policy to improve the ability to run the testsuite within a child SELinux namespace with an enforcing parent namespace, which can be found on the selinuxns branch of my fork of the selinux-testsuite.
 
     git clone -b selinuxns https://github.com/stephensmalley/selinux-testsuite
 
