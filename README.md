@@ -1,6 +1,6 @@
 # SELinux Namespaces
 
-This repository is merely for documentation and tracking [issues](https://github.com/stephensmalley/selinuxns/issues) associated with the SELinux namespaces support. The code all lives elsewhere in branches of other repositories as identified below. Slides from a presentation about this work can be found [here](https://sched.co/1zam6), and a recording should be available sometime after the conference concludes.
+This repository is merely for documentation and tracking [issues](https://github.com/stephensmalley/selinuxns/issues) associated with the SELinux namespaces support. The code all lives elsewhere in branches of other repositories as identified below. Slides from a presentation about this work can be found [here](https://sched.co/1zam6), and a recording is available [here](https://youtu.be/AwzGCOwxLoM). 
 
 ## Getting Started
 Clone and build the working-selinuxns branch of my tree containing the SELinux namespace patches.
