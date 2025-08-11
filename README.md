@@ -41,9 +41,8 @@ Once you have booted this kernel, you can unshare the SELinux namespace and load
     runcon unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 /bin/bash
     id -Z # See that you actually are in the right context now
     # Switch child to enforcing, checking that you didn't get killed once enforcing
-    echo $$
     setenforce 1
-    echo $$
+    cat /sys/fs/selinux/unshare # should be "1" still
     # Do stuff in child, run testsuite (switch parent to permissive first to avoid denials from it), etc.
     # When finished experimenting with the child namespace, do:
     # Exit shell created by runcon
@@ -125,9 +124,8 @@ The entire SELinux testsuite can be run within a child SELinux namespace as long
     runcon unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 /bin/bash
     id -Z # See that you actually are in the right context now
     # Switch child to enforcing, checking that you didn't get killed once enforcing
-    echo $$
     setenforce 1
-    echo $$
+    cat /sys/fs/selinux/unshare # should be "1" still
     # Run testsuite
     cd selinux-testsuite
     make test
@@ -167,9 +165,8 @@ It is also possible to run much of the SELinux testsuite in the child namespace 
     runcon unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 /bin/bash
     id -Z # See that you actually are in the right context now
     # Switch child to enforcing, checking that you didn't get killed once enforcing
-    echo $$
     setenforce 1
-    echo $$
+    cat /sys/fs/selinux/unshare # should be "1" still
     # Run testsuite in the child
     make test
     # Exit shell created by runcon
@@ -237,11 +234,10 @@ A modified version of libselinux has been created on the selinuxns branch of my 
     # Now you can launch a shell in an unconfined context.
     runcon unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 /bin/bash
     # Now you should be able to safely switch the child to enforcing mode.
-    # But check the PID before and after doing so to verify that the shell
+    # But check the unshare value after doing so to verify that the shell
     # wasn't immediately killed when it went enforcing.
-    echo $$
     setenforce 1
-    echo $$ # make sure this didn't change
+    cat /sys/fs/selinux/unshare # should be "1" still
     # Do stuff
 </details>
 
