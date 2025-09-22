@@ -276,7 +276,7 @@ For the simplest case of creating an nspawn container image of the latest Fedora
 
 <details><summary>Expand commands</summary>
 
-    sudo dnf -y --releasever=42 --installroot=/var/lib/machines/f42 \
+    sudo dnf -y --releasever=42 --use-host-config --installroot=/var/lib/machines/f42 \
         --setopt=install_weak_deps=False install \
         passwd dnf fedora-release vim-minimal util-linux systemd systemd-networkd \
         selinux-policy-targeted
