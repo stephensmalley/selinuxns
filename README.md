@@ -242,7 +242,7 @@ A modified version of libselinux has been created on the selinuxns branch of my 
 </details>
 
 #### Build modified systemd-nspawn
-A modified version of systemd-nspawn to invoke this selinux_unshare() API when systemd-nspawn is passed the --selinux-namespace option can be found in the selinuxns branch of my fork of systemd. To build the modified systemd-nspawn:
+A modified version of systemd-nspawn to invoke this selinux_unshare() API when systemd-nspawn is passed the --selinux-namespace option can be found in the selinuxns-host branch of my fork of systemd. To build the modified systemd-nspawn:
 
 <details><summary>Expand commands</summary>
     
@@ -250,7 +250,7 @@ A modified version of systemd-nspawn to invoke this selinux_unshare() API when s
     sudo dnf install systemd-container
     # Install systemd's build dependencies
     sudo dnf build-dep systemd
-    git clone -b selinuxns https://github.com/stephensmalley/systemd
+    git clone -b selinuxns-host https://github.com/stephensmalley/systemd
     cd systemd
     meson setup build/
     ninja -C build/
@@ -330,7 +330,7 @@ Label the container filesystem based on its policy (not the host policy!).  Use 
     setfiles /etc/selinux/targeted/contexts/files/file_contexts /
 
 #### Boot with its own namespace
-Once the container has the modifed systemd, a policy, and labeled files, you can test booting with its own SELinux namespace. From the host OS:
+Once the container has the modified systemd, a policy, and labeled files, you can test booting with its own SELinux namespace. From the host OS:
 
 <details><summary>Expand commands</summary>
     
