@@ -276,22 +276,22 @@ For the simplest case of creating an nspawn container image of the latest Fedora
 
 <details><summary>Expand commands</summary>
 
-    sudo dnf -y --releasever=41 --installroot=/var/lib/machines/f41 \
+    sudo dnf -y --releasever=42 --installroot=/var/lib/machines/f42 \
         --setopt=install_weak_deps=False install \
         passwd dnf fedora-release vim-minimal util-linux systemd systemd-networkd \
         selinux-policy-targeted
     # Set root password so you can login to the container
     # NB Might require switching to permissive mode (setenforce 0) temporarily to work around a labeling issue in the container filesystem
-    sudo chroot /var/lib/machines/f41 passwd
+    sudo chroot /var/lib/machines/f42 passwd
 </details>
     
 Confirm that you can successfully boot this container without using SELinux namespaces:
 
 <details><summary>Expand commands</summary>
     
-    # Boot the container named f41
+    # Boot the container named f42
     # Assumes you have systemd-nspawn installed; if not, dnf install systemd-container first.
-    sudo systemd-nspawn -b -M f41
+    sudo systemd-nspawn -b -M f42
     # Login to the container, look around, getenforce will show Disabled because
     # selinuxfs is mounted read-only to tell the container userspace to not try to
     # load its own policy or do any SELinux processing.
@@ -336,7 +336,7 @@ Once the container has the modifed systemd, a policy, and labeled files, you can
     
     # This is done from the host OS, not the container.
     cd systemd
-    sudo ./build/systemd-nspawn --selinux-namespace -b -M f41
+    sudo ./build/systemd-nspawn --selinux-namespace -b -M f42
     # Login, check getenforce and id output to see that SELinux is enabled within the container.
     # ps -eZ will show the labels of the processes within the container, which
     # will be the expected labels (e.g. systemd running in init_t, journald running in syslogd_t).
