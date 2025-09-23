@@ -299,7 +299,7 @@ Confirm that you can successfully boot this container without using SELinux name
 </details>
 
 #### Build modified systemd
-The next step is to build and install the modified systemd into the container OS. Options for building include doing so from within the container itself or from a mock(1) environment or another VM running the same OS as the container. Don't just use the version you built on the host OS unless the container OS is the same. Depending on the container OS, you may need to cherry-pick the patch over to the base systemd version used by the container OS. From the build environment, do the following:
+The next step is to build and install the modified systemd into the container OS. Note that this is NOT the same as the modified systemd-nspawn built earlier for the host OS. You need to build with the same environment and dependencies as the container OS; the simplest way is to build from within the container itself (downside: pollutes the container with the build dependencies and systemd build tests will fail) or on another VM running the same OS as the container. Depending on the container OS, you may need to cherry-pick the patch over to the base systemd version used by the container OS. If you are instead just using my systemd fork (which may or may not work on containers expecting older versions), from the build environment, do the following:
 
 <details><summary>Expand commands</summary>
 
