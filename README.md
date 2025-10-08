@@ -13,6 +13,8 @@ You will need to enable the SELinux namespaces support option under Security opt
 
 Reviewing the patches on the branch is a good way to learn a lot about SELinux and the current state of SELinux namespaces, starting with just reading the patch descriptions and any TODO comments sprinkled in the code.
 
+Note that earlier versions of the SELinux namespaces support added and used a /sys/fs/selinux/unshare pseudo file interface for unsharing the SELinux namespace; given upstream preference for a syscall-based LSM namespacing API and implementation of such an API, the /sys/fs/selinux/unshare API is deprecated and likely will not be included when these patches are upstreamed. Hence, all references to /sys/fs/selinux/unshare below have been rewritten to use the corresponding libselinux utility programs and wrapper APIs instead which internally use the new syscall-based interfaces.
+
 Clone and build the selinuxns branch of my selinux userspace fork containing a modified libselinux that provides a selinux_unshare() API call for unsharing the SELinux namespace, an is_selinux_unshared() API call for detecting whether one is in an unshared SELinux namespace that has not yet been fully initialized (i.e. no policy loaded yet), an unshareselinux utility program that allows one to exercise the APIs to run a shell or command in its own SELinux namespace, and an selinuxunshared utility program to test for being in an unshared SELinux namespace that has not yet been fully initialized.
 
     git clone -b selinuxns https://github.com/stephensmalley/selinux
