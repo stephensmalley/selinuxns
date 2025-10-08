@@ -3,7 +3,7 @@
 This repository is merely for documentation and tracking [issues](https://github.com/stephensmalley/selinuxns/issues) associated with the SELinux namespaces support. The code all lives elsewhere in branches of other repositories as identified below. Slides from a presentation about this work can be found [here](https://static.sched.com/hosted_files/lssna2025/27/NamespacesforSELinux.pdf), and a recording is available [here](https://youtu.be/AwzGCOwxLoM). 
 
 ## Getting Started
-Clone and build the working-selinuxns branch of my tree containing the SELinux namespace patches.
+Clone and build the working-selinuxns branch of my selinux kernel fork containing the SELinux namespace patches.
 
     git clone -b working-selinuxns https://github.com/stephensmalley/selinux-kernel
 
@@ -13,43 +13,48 @@ You will need to enable the SELinux namespaces support option under Security opt
 
 Reviewing the patches on the branch is a good way to learn a lot about SELinux and the current state of SELinux namespaces, starting with just reading the patch descriptions and any TODO comments sprinkled in the code.
 
-Once you have booted this kernel, you can unshare the SELinux namespace and load a policy into it as follows:
+Clone and build the selinuxns branch of my selinux userspace fork containing a modified libselinux that provides a selinux_unshare() API call for unsharing the SELinux namespace, an is_selinux_unshared() API call for detecting whether one is in an unshared SELinux namespace that has not yet been fully initialized (i.e. no policy loaded yet), an unshareselinux utility program that allows one to exercise the APIs to run a shell or command in its own SELinux namespace, and an selinuxunshared utility program to test for being in an unshared SELinux namespace that has not yet been fully initialized.
+
+    git clone -b selinuxns https://github.com/stephensmalley/selinux
+    cd selinux/libselinux
+    # Caveat: This will clobber your system libselinux. If you don't want that, then set DESTDIR accordingly!
+    # If installing to a private destination directory, you can do this instead:
+    # make DESTDIR=/path/to/destdir install
+    # However, if you do this, then you need to set LD_LIBRARY_PATH accordingly when running programs that use these APIs.
+    # NB Failing to set LIBDIR and SHLIBDIR will incorrectly install to just /lib and /usr/lib
+    # which are for 32-bit compatibility libraries on Linux distributions.
+    # On Debian/Ubuntu, make LIBDIR=/usr/lib/x86_64-linux-gnu SHLIBDIR=/usr/lib/x86_64-linux-gnu install
+    sudo make LIBDIR=/usr/lib64 SHLIBDIR=/lib64 install relabel
+
+Once you have booted the modified kernel and installed the modified libselinux, you can unshare the SELinux namespace and load a policy into it as follows:
 <details><summary>Expand commands</summary>
     
-    # Create root shell
-    sudo bash
     id -Z # See your context in the current SELinux namespace
     getenforce # See enforcing status in the current SELinux namespace
-    # Unshare SELinux namespace
-    echo 1 > /sys/fs/selinux/unshare
-    id -Z # Context is now "kernel" in child; ps -eZ from parent will still show original context
-    getenforce # Still enforcing because you haven't yet mounted a new selinuxfs and are reading the parent's state
-    setenforce 0 # Fails because you are in a child namespace and aren't allowed to modify the parent
-    # Unshare mount namespace and mount new selinuxfs for child SELinux namespace
-    # NB unshare(1) creates a child shell with the unshared mount namespace
-    # so the commands after the unshare command actually run in their own shell.
-    # If you want to script this, you'd need to put the commands after the unshare
-    # in their own script and pass the script name to unshare, or use a Here document (<<EOF).
-    unshare -m
-    umount /sys/fs/selinux
+    # Create a shell with unshared SELinux and mount namespaces
+    sudo unshareselinux bash
+    # See that you are in an unshared SELinux namespace that is not yet fully initialized
+    selinuxunshared
+    # Mount new selinuxfs instance referencing the child namespace
     mount -t selinuxfs none /sys/fs/selinux
     getenforce # Child namespace starts in permissive
     # Load a policy into the child SELinux namespace, parent unaffected
     load_policy
+    # See that the namespace is now initialized
+    selinuxunshared
     id -Z # Context is now kernel_generic_helper_t on Fedora due to a default transition in its policy
     # Switch to a suitable security context before trying to go enforcing
     runcon unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 /bin/bash
     id -Z # See that you actually are in the right context now
     # Switch child to enforcing, checking that you didn't get killed once enforcing
+    echo $$
     setenforce 1
-    cat /sys/fs/selinux/unshare # should be "1" still
+    echo $$
     # Do stuff in child, run testsuite (switch parent to permissive first to avoid denials from it), etc.
     # When finished experimenting with the child namespace, do:
     # Exit shell created by runcon
     exit
-    # Exit shell created by unshare
-    exit
-    # Exit shell that originally unshared SELinux namespace
+    # Exit shell created by unshareselinux
     exit
     # Child namespace should be gone and you should be back to the parent/init namespace.
 </details>
@@ -66,20 +71,16 @@ Testing of maxnsdepth was done using the following script named doit.sh:
     echo $1
     arg="$1"
     argplus=$((arg + 1))
-    umount /sys/fs/selinux
     mount -t selinuxfs none /sys/fs/selinux
-    echo 1 > /sys/fs/selinux/unshare
-    unshare -m ./doit.sh $argplus
+    unshareselinux ./doit.sh $argplus
 </details>
 
 which can be called as follows:
 
 <details><summary>Expand commands</summary>
     
-    # Create root shell to unshare namespaces
-    sudo bash
-    # Unshare the mount namespace and invoke the recursive script; should fail upon hitting the limit
-    unshare -m ./doit.sh 1
+    # Unshare the SELinux and mount namespaces and invoke the recursive script; should fail upon hitting the limit
+    sudo unshareselinux ./doit.sh 1
     # Expect failure when it tries to create the 33rd nested namespace
 </details>
 
@@ -91,7 +92,7 @@ Testing of maxns was done by lowering it to a value below maxnsdepth and then ru
     sudo bash
     cat /sys/fs/selinux/maxns
     echo 5 > /sys/fs/selinux/maxns
-    unshare -m ./doit.sh 1
+    unshareselinux ./doit.sh 1
     # Expect failure when it tries to create the 5th namespace (init namespace + 4 children = 5)
     # Restore original maxns value
     echo 65535 > /sys/fs/selinux/maxns
@@ -109,14 +110,11 @@ The entire SELinux testsuite can be run within a child SELinux namespace as long
 
 <details><summary>Expand commands</summary>
 
-    sudo bash
     # Switch init SELinux namespace to permissive so it doesn't interfere with testsuite operation in the child
-    setenforce 0
-    # Unshare SELinux namespace
-    echo 1 > /sys/fs/selinux/unshare
-    # Unshare mount namespace and mount new selinuxfs for child SELinux namespace
-    unshare -m
-    umount /sys/fs/selinux
+    sudo setenforce 0
+    # Create a shell with unshared SELinux and mount namespaces
+    sudo unshareselinux bash
+    # Mount new selinuxfs for child SELinux namespace
     mount -t selinuxfs none /sys/fs/selinux
     # Load a policy into the child SELinux namespace, parent unaffected
     load_policy
@@ -124,16 +122,15 @@ The entire SELinux testsuite can be run within a child SELinux namespace as long
     runcon unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 /bin/bash
     id -Z # See that you actually are in the right context now
     # Switch child to enforcing, checking that you didn't get killed once enforcing
+    echo $$
     setenforce 1
-    cat /sys/fs/selinux/unshare # should be "1" still
+    echo $$
     # Run testsuite
     cd selinux-testsuite
     make test
     # Exit shell created by runcon
     exit
-    # Exit shell created by unshare -m above
-    exit
-    # Exit shell that originally unshared its SELinux namespace
+    # Exit shell that unshared its SELinux namespace
     exit
     # Restore init SELinux namespace to enforcing
     sudo setenforce 1
@@ -153,11 +150,9 @@ It is also possible to run much of the SELinux testsuite in the child namespace 
     # and unconfined_t in the parent is allowed the necessary permissions to them.
     cd selinux-testsuite
     make -C policy load
-    # Unshare SELinux namespace
-    echo 1 > /sys/fs/selinux/unshare
-    # Unshare mount namespace and mount new selinuxfs for child SELinux namespace
-    unshare -m
-    umount /sys/fs/selinux
+    # Create a shell with unshared SELinux and mount namespaces
+    unshareselinux bash
+    # Mount new selinuxfs for child SELinux namespace
     mount -t selinuxfs none /sys/fs/selinux
     # Load a policy into the child SELinux namespace, parent unaffected
     load_policy
@@ -165,13 +160,12 @@ It is also possible to run much of the SELinux testsuite in the child namespace 
     runcon unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 /bin/bash
     id -Z # See that you actually are in the right context now
     # Switch child to enforcing, checking that you didn't get killed once enforcing
+    echo $$
     setenforce 1
-    cat /sys/fs/selinux/unshare # should be "1" still
+    echo $$ # should have same value
     # Run testsuite in the child
     make test
     # Exit shell created by runcon
-    exit
-    # Exit shell created by unshare -m above
     exit
     # Exit shell that originally unshared its SELinux namespace
     exit
@@ -204,7 +198,7 @@ The userspace support for using SELinux namespaces with Linux containers can be 
 On the host OS, you need a modified container runtime to launch the container with its own SELinux namespace. To avoid hardcoding the current kernel API for unsharing the SELinux namespace into the container runtime code, a modified libselinux is provided that abstracts this interface behind a general API. For prototyping purposes, we are using the systemd-nspawn container runtime since it is small, easily extended, and in C (i.e. no need for other language bindings), and because we already have to modify systemd for the container anyway.
 
 #### Build modified libselinux
-A modified version of libselinux has been created on the selinuxns branch of my selinux userspace fork that provides a selinux_unshare() API call for unsharing the SELinux namespace and an unshareselinux utility program that allows one to exercise the API to run a shell or command in its own SELinux namespace.
+A modified version of libselinux has been created on the selinuxns branch of my selinux userspace fork that provides a selinux_unshare() API call for unsharing the SELinux namespace, an is_selinux_unshared() API call for detecting whether one is in an unshared SELinux namespace that has not yet been fully initialized (i.e. no policy loaded yet), an unshareselinux utility program that allows one to exercise the APIs to run a shell or command in its own SELinux namespace, and an selinuxunshared utility program to test for being in an unshared SELinux namespace that has not yet been fully initialized.
 
 <details><summary>Expand commands</summary>
     
@@ -234,10 +228,11 @@ A modified version of libselinux has been created on the selinuxns branch of my 
     # Now you can launch a shell in an unconfined context.
     runcon unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 /bin/bash
     # Now you should be able to safely switch the child to enforcing mode.
-    # But check the unshare value after doing so to verify that the shell
+    # But check the PID before and after doing so to verify that the shell
     # wasn't immediately killed when it went enforcing.
+    echo $$
     setenforce 1
-    cat /sys/fs/selinux/unshare # should be "1" still
+    echo $$
     # Do stuff
 </details>
 
