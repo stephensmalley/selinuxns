@@ -2,6 +2,8 @@
 
 This repository is merely for documentation and tracking [issues](https://github.com/stephensmalley/selinuxns/issues) associated with the SELinux namespaces support. The code all lives elsewhere in branches of other repositories as identified below. Slides from a presentation about this work can be found [here](https://static.sched.com/hosted_files/lssna2025/27/NamespacesforSELinux.pdf), and a recording is available [here](https://youtu.be/AwzGCOwxLoM). 
 
+## Note Well
+
 Note that earlier versions of the SELinux namespaces patches introduced a /sys/fs/selinux/unshare pseudo file interface for unsharing the SELinux namespace; given upstream preference for a syscall-based LSM namespacing API and subsequent implementation of such an API, the /sys/fs/selinux/unshare API is deprecated and likely will not be included when these patches are upstreamed. Hence, all references to /sys/fs/selinux/unshare below have been rewritten to use the corresponding libselinux utility programs and wrapper APIs instead which internally use the new syscall-based interfaces. If you are following one of the sequences of commands from the presentation linked above, you will need to adjust accordingly.
 
 ## Getting Started
