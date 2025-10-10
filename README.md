@@ -190,6 +190,7 @@ In order to enable testing of SELinux namespaces for full containers, potentiall
 Fedora  |y|y|y|
 Fedora w/o policy [^1] |y|y|y|
 Ubuntu [^2] |y|y|y|
+Rocky 9|y|y|y|
 
 [^1]: Fedora host OS with SELinux enabled but no policy loaded. Currently requires relabel from container on first boot.
 [^2]: Ubuntu host OS with SELinux enabled but no policy loaded. Currently requires relabel from container on first boot.
@@ -327,6 +328,10 @@ Install a known working base policy into the container filesystem if you haven't
 Label the container filesystem based on its policy (not the host policy!).  Use setfiles not restorecon (ask me why)! This is best done from within the container although it may be possible to do from the host if the policies are relatively similar. From within the container or chroot'd to its root directory:
 
     setfiles /etc/selinux/targeted/contexts/files/file_contexts /
+
+If the container image has file contexts that are unknown to the host OS policy, then you may need to run setfiles in the setfiles_mac_t domain so that it can set unknown contexts on files.
+
+    runcon -t setfiles_mac_t setfiles /etc/selinux/targeted/contexts/files/file_contexts /
 
 #### Boot with its own namespace
 Once the container has the modified systemd, a policy, and labeled files, you can test booting with its own SELinux namespace. From the host OS:
